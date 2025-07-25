@@ -99,7 +99,19 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
 This project can be a template for a basic configuration for Jaeger, Grafana, Prometheus with OpenTel using docker.
-The provided data came from postgres and application that have to be running 
-on port 3000.
+Remember that this project is using that is why is using node-exporter in docker-compose
+https://grafana.com/grafana/dashboards/1860-node-exporter-full/ and 
+https://grafana.com/grafana/dashboards/9628-postgresql-database/ layouts.
+9628
+1) Configure data Source: Add http://prometheus:9090 in Prometheus server URL and Save and Test
 
-You have to 
+2) Import Dashboard with 1860 (node) and 9628 (postgres) -> Click on first Load and add prometheus datasource
+
+Open
+http://localhost:3001 (Grafana)
+
+Others relevants endpoints:
+http://localhost:8889/metrics -> metrics from opentel 
+http://localhost:9090/metrics -> metrics from grafana
+http://localhost:9090/->prometheus ui
+

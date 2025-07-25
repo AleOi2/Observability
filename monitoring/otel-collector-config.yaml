@@ -13,7 +13,7 @@ receivers:
 
         - job_name: 'my_app'
           static_configs:
-            - targets: ['172.17.0.1:3000']
+            - targets: ['app:3000']
           metrics_path: '/metrics'
           scrape_interval: 5s
 

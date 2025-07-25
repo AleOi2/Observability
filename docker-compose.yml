@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  # Aplicação NestJS - Desabilitada por padrão para desenvolvimento
+  # Para usar, execute: docker-compose up app
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://user:password@postgres:5432/mydb
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app
+      - /app/node_modules
+
   postgres:
     image: postgres:16
     environment:
@@ -30,7 +46,7 @@ services:
       - "8889:8889"   # Prometheus scrape endpoint
     depends_on:
       - postgres_exporter
-      # - app
+      - app
 
   prometheus:
     image: prom/prometheus:latest
