@@ -115,3 +115,22 @@ http://localhost:8889/metrics -> metrics from opentel
 http://localhost:9090/metrics -> metrics from grafana
 http://localhost:9090/->prometheus ui
 
+Note que:
+To Jaeger make it work you have to at least create one request to tracing span endpoint first.
+Note that I can Use my app -> Otel Collector -> Jaeger 
+Or  my app -> Jaeger (This not support grpc)
+
+Note that in otel-collector-config, 
+exporters:
+  otlp/jaeger:  
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+So It telling that otlp is sending to jager endpoint
+Note that
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+It is telling that otlp is openning 8889 to listen (note 0.0.0.0) in syntax.
+So otlp is permitting prometheus get data on port 8899.     
+Note that in console otel-collector will show "metrics" and "traces" if all is working fine.

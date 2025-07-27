@@ -2,7 +2,9 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       http:
+        endpoint: 0.0.0.0:4318
 
   prometheus:
     config:
@@ -30,7 +32,8 @@ exporters:
   debug:
     verbosity: detailed
 
-  otlp:
+  otlp:  # ← Usar OTLP para enviar ao Jaeger
+    # endpoint: http://jaeger:14268/api/v1/traces  # HTTP endpoint com path
     endpoint: jaeger:4317
     tls:
       insecure: true

@@ -1,0 +1,13 @@
+GET http://localhost:3000/metrics
+Content-Type: application/json
+
+{
+    
+}
+###
+GET http://localhost:3000/tracing
+Content-Type: application/json
+
+{
+    
+}

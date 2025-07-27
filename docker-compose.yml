@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16
@@ -9,7 +7,13 @@ services:
       POSTGRES_DB: mydb
     ports:
       - "5433:5432"
-
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # ← Persistir PostgreSQL      
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   postgres_exporter:
     image: prometheuscommunity/postgres-exporter:latest
     environment:
@@ -26,18 +30,28 @@ services:
       - ./monitoring/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
     ports:
       - "4317:4317"   # OTLP gRPC receiver (app traces)
+      - "4318:4318"   # OTLP HTTP ← IMPORTANTE para nossa config
       - "55681:55681" # OTLP HTTP receiver (optional)
       - "8889:8889"   # Prometheus scrape endpoint
     depends_on:
       - postgres_exporter
-      # - app
+      - jaeger  # ← IMPORTANTE: garantir que Jaeger inicia primeiro
+       # - app
 
   prometheus:
     image: prom/prometheus:latest
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus  # ← Persistir dados do Prometheus
     ports:
       - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'  # ← Reter dados por 200h
+      - '--web.enable-lifecycle'
     depends_on:
       - otel-collector
 
@@ -47,18 +61,60 @@ services:
       - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana  # ← Persistir dashboards/datasources      
     depends_on:
       - prometheus
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - jaeger_elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
       - "16686:16686"  # Jaeger UI
-      - "14250:14250"  # Jaeger gRPC (optional)
+      # - "4317:4317"    # OTLP gRPC
+      # - "4318:4318"    # OTLP HTTP (optional)
+      - "14250:14250"  # Jaeger gRPC collector (collector → jaeger)
+      - "14268:14268"  # Jaeger HTTP collector
+      - "16685:16685"  # Jaeger gRPC (optional)
     environment:
-      COLLECTOR_ZIPKIN_HTTP_PORT: 9411
-
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - ES_SERVER_URLS=http://elasticsearch:9200
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:16686/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
   node_exporter:
     image: prom/node-exporter:latest
     container_name: node_exporter
     ports:
       - "9100:9100"
+volumes:
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  jaeger_elasticsearch_data:
+    driver: local

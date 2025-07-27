@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { makeCounterProvider, PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
     PrometheusModule.register({
       path: '/metrics',
     }),
+    MetricsModule
   ],
   controllers: [AppController],
   providers: [
