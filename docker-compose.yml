@@ -17,11 +17,16 @@ services:
   postgres_exporter:
     image: prometheuscommunity/postgres-exporter:latest
     environment:
-      DATA_SOURCE_NAME: "postgresql://user:password@postgres:5432/mydb?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://pmis:62be9ecbe9567a67de6603ebbe1fc2a7aa3b1cb536c93c1532b90b671c9329ab@ec2-54-94-230-135.sa-east-1.compute.amazonaws.com:9856/pmis_db"
     depends_on:
       - postgres
     ports:
       - "9187:9187"
+    volumes:
+      - ./monitoring/queries.yaml:/queries.yaml
+    command:
+      - "--extend.query-path=/queries.yaml"
+
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest

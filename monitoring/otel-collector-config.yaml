@@ -12,13 +12,11 @@ receivers:
         - job_name: 'postgres_exporter'
           static_configs:
             - targets: ['postgres_exporter:9187']
-
         - job_name: 'my_app'
           static_configs:
             - targets: ['172.17.0.1:3000']
           metrics_path: '/metrics'
           scrape_interval: 5s
-
         - job_name: 'node_exporter'
           static_configs:
             - targets: ['node_exporter:9100']
